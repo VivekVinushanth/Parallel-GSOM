@@ -1,4 +1,5 @@
 # MAL_GSOM =  Multiple Aspect Learning GSOM
+import threading
 import time
 from os.path import join
 from datetime import datetime
@@ -6,47 +7,56 @@ import numpy as np
 
 import os
 import sys
+
 sys.path.append('../../')
 import copy
 from util import utilities as Utils
 from util import display as Display_Utils
-from core4 import gsom as GSOM_Core
+from core4 import ProducerGSOM as GSOM_Core
 from params import params as Params
 
 from gsomClassifier import GSOMClassifier
 
-class MAL_GSOM():
-    def __init__(
-            self,
-            aspects=2,
-            hierarchy=2,
-            aspect_gsom_array=[],
-            feature_array=[]
 
-    ):
-        self.aspects=aspects
-        self.hierarchy=hierarchy
-        self.aspect_gsom_array=aspect_gsom_array
-        self.feature_array=feature_array
-
-
-    def gen_aspect_GSOMs(aspects):
-        if (aspects>0):
-            for i in range(aspects):
-                gsom = GSOMClassifier()
-                aspect_gsom_array.append(gsom)
-
-    def gen_feature_array(aspects):
-        if (aspects > 0):
-            for i in range(aspects):
-                feature_array.append([5])
-
-            
-    def feature_producer():
-        
+# class MAL_GSOM():
+#     def __init__(
+#             self,
+#             aspects=2,
+#             hierarchy=2,
+#             aspect_gsom_array=[],
+#             feature_array=[]
+#
+#     ):
+#         self.aspects=aspects
+#         self.hierarchy=hierarchy
+#         self.aspect_gsom_array=aspect_gsom_array
+#         self.feature_array=feature_array
 
 
+# def gen_aspect_GSOMs(aspects):
+#     if (aspects>0):
+#         for i in range(aspects):
+#             gsom = GSOMClassifier()
+#             aspect_gsom_array.append(gsom)
+#
+# def gen_feature_array(aspects):
+#     if (aspects > 0):
+#         for i in range(aspects):
+#             feature_array.append([5])
+#
+#
+# def feature_producer():
 
+emotion_feature = np.random((50,1024))
+behaviour_feature = np.random((50,1024))
+
+
+emo_lock = threading.Lock()
+behav_lock = threading.Lock()
+
+emotion_feature_list = []
+behavior_feature_list = []
+INPUT_SIZE = emotion_feature.shape[0]
 
 class GSOM_Factory():
     def __init__(
@@ -108,7 +118,6 @@ class GSOM_Factory():
         #  Initiate parameters
         self.params = self.generate_params(input_vector_database.shape[0])
 
-
         # Process the input files
         self.output_loc, output_loc_images = self.generate_output_config(self.SF, self.forget_threshold)
 
@@ -132,7 +141,6 @@ class GSOM_Factory():
             'gsom': self.gsom_nodemap,
             'aggregated': None
         })
-
 
         return result_dict, classes
 

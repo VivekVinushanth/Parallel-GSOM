@@ -10,14 +10,16 @@ from core4 import growth_handler as Growth_Handler
 from core4 import elements as Elements
 from util import utilities as Utils
 from util import display as Display_Utils
-
+import threading
+import Lock
 
 np.random.seed(8)
 
 
-class GSOM:
+class ConsumerGSOM(threading.Thread):
 
     def __init__(self, params, dimensions, plot_for_itr=0, activity_classes=None, output_loc=None):
+        threading.Thread.__init__(self)
         self.parameters = params
         self.growth_handler = Growth_Handler.GrowthHandler()
         self.dimensions = dimensions
@@ -35,7 +37,16 @@ class GSOM:
         self.previousBMU = np.zeros((1, self.parameters.NUMBER_OF_TEMPORAL_CONTEXTS, self.dimensions))
         self.previousBMU_evaluation = np.zeros((1, self.parameters.NUMBER_OF_TEMPORAL_CONTEXTS, self.dimensions))
 
+    def run(self):
+        self.grow()
+
     def grow(self):
+
+        global emo_lock
+        global behav_lock
+        global emotion_feature_list
+        global behavior_feature_list
+        global INPUT_SIZE
 
         self._initialize_network(self.dimensions)
         param = self.parameters
@@ -54,9 +65,40 @@ class GSOM:
             neighbourhood_radius = self._get_neighbourhood_radius(param.LEARNING_ITERATIONS, i,
                                                                   param.MAX_NEIGHBOURHOOD_RADIUS)
 
-            # start_time = time.time()
-            for k in range(0, len(inputs)):  # No need of random sampling
-                grow_in(inputs[k], learning_rate, neighbourhood_radius)
+            # Consuming combined_weights
+            for k in range(0, Lock.INPUT_SIZE):
+                # Consume one item
+                # cv = threading.Lock()
+
+                Lock.emo_lock.acquire()
+                print("Consumer thread acquired emotion lock -----",k,"\n")
+                while k > len(Lock.emotion_feature_list)-1:
+                    print("Consumer thread waiting becoz k is greater (emo)----", k,"\n")
+                    Lock.emo_lock.wait()
+                emotion = Lock.emotion_feature_list[k]
+
+                if k==Lock.INPUT_SIZE-1:
+                    Lock.emotion_feature_list = []
+
+                Lock.emo_lock.notify()
+                Lock.emo_lock.release()
+
+                Lock.behav_lock.acquire()
+                print("Consumer thread acquired behavior lock -----",k,"\n")
+                while k > len(Lock.behavior_feature_list) - 1:
+                    print("Consumer thread waiting becoz k is greater (behav)----", k,"\n")
+                    Lock.behav_lock.wait()
+                behaviour = Lock.behavior_feature_list[k]
+                if k==Lock.INPUT_SIZE-1:
+                    Lock.behavior_feature_list = []
+
+                Lock.behav_lock.notify()
+                Lock.behav_lock.release()
+
+
+                data = np.hstack((emotion,behaviour))
+                grow_in(data, learning_rate, neighbourhood_radius)
+
 
             # Remove all the nodes above the age threshold
             Utils.Utilities.remove_older_nodes(self.gsom_nodemap, self.parameters.AGE_THRESHOLD)
@@ -81,7 +123,7 @@ class GSOM:
             neighbourhood_radius = self._get_neighbourhood_radius(self.parameters.SMOOTHING_ITERATIONS, i,
                                                                   reduced_neighbourhood_radius)
 
-            for k in range(0, len(inputs)):  # No need of random sampling
+            for k in range(0, INPUT_SIZE):  # No need of random sampling
                 smooth(inputs[k], learning_rate, neighbourhood_radius)
 
 
@@ -262,7 +304,7 @@ class GSOM:
             self._adjust_weights_for_neighbours(gsom_nodemap[top], winner, neigh_radius, learning_rate)
         elif bottom in gsom_nodemap:
             self._adjust_weights_for_neighbours(gsom_nodemap[bottom], winner, neigh_radius, learning_rate)
-
+        # dhtfjhfgjgf
     def _grow_for_single_iteration_and_single_input(self, input_vector, learning_rate, neigh_radius):
 
         # Set local references to self variables
