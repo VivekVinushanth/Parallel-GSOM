@@ -17,12 +17,11 @@ np.random.seed(8)
 
 class GSOM:
 
-    def __init__(self, params, input_vectors, dimensions, plot_for_itr=0, activity_classes=None, output_loc=None):
+    def __init__(self, params, dimensions, plot_for_itr=0, activity_classes=None, output_loc=None):
         self.parameters = params
-        self.inputs = np.asarray(input_vectors)
         self.growth_handler = Growth_Handler.GrowthHandler()
         self.dimensions = dimensions
-        self.learn_smooth_sample_size = self.parameters.get_learn_smooth_sample_size(len(self.inputs))
+        # self.learn_smooth_sample_size = self.parameters.get_learn_smooth_sample_size(len(inputs))
         self.gsom_nodemap = {}
         self.plot_for_itr = plot_for_itr
         self.display = Display_Utils.Display(None, None)
@@ -56,15 +55,15 @@ class GSOM:
                                                                   param.MAX_NEIGHBOURHOOD_RADIUS)
 
             # start_time = time.time()
-            for k in range(0, len(self.inputs)):  # No need of random sampling
-                grow_in(self.inputs[k], learning_rate, neighbourhood_radius)
-            # print('Itr-{}:'.format(i), round((time.time()-start_time), 3))
+            for k in range(0, len(inputs)):  # No need of random sampling
+                grow_in(inputs[k], learning_rate, neighbourhood_radius)
 
             # Remove all the nodes above the age threshold
             Utils.Utilities.remove_older_nodes(self.gsom_nodemap, self.parameters.AGE_THRESHOLD)
 
         # END of learning iterations
         return self.gsom_nodemap
+
 
     def smooth(self):
 
@@ -82,8 +81,8 @@ class GSOM:
             neighbourhood_radius = self._get_neighbourhood_radius(self.parameters.SMOOTHING_ITERATIONS, i,
                                                                   reduced_neighbourhood_radius)
 
-            for k in range(0, len(self.inputs)):  # No need of random sampling
-                smooth(self.inputs[k], learning_rate, neighbourhood_radius)
+            for k in range(0, len(inputs)):  # No need of random sampling
+                smooth(inputs[k], learning_rate, neighbourhood_radius)
 
 
         # End of smoothing iterations
@@ -99,7 +98,7 @@ class GSOM:
         gsom_nodemap = self.gsom_nodemap
         curr_count = 0
 
-        for cur_input in self.inputs:
+        for cur_input in inputs:
 
             self.globalContexts[0] = cur_input
 
@@ -131,7 +130,7 @@ class GSOM:
         gsom_nodemap = copy.deepcopy(self.gsom_nodemap)
         curr_count = 0
 
-        for cur_input in self.inputs:
+        for cur_input in inputs:
 
             self.globalContexts_evaluation[0] = cur_input
 
@@ -185,7 +184,7 @@ class GSOM:
                     X_weights=[]
                     label_indexes = value.get_mapped_labels_indexes()
                     for i in label_indexes:
-                        X_weight=self.inputs[i,:]
+                        X_weight=inputs[i,:]
                         # np.append(cripkeu,sdgg,axis=0)
                         X_weights.append(X_weight)
                     X_weights = np.asarray(X_weights)
