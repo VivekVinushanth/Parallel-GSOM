@@ -14,4 +14,4 @@ Samle
 * aspect =2
 * hierarchy (default) =2
 
-![sample_algorithm](https://drive.google.com/file/d/1MqI_E9yjtxen34LN-AEzByMwfhjYzpIp/view?usp=sharing)
+![sample_algorithm](Parallel-GSOM/Diagrams/MAL-GSOM.png)
