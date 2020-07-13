@@ -16,7 +16,7 @@ import Lock
 np.random.seed(8)
 
 
-class ConsumerGSOM(threading.Thread):
+class AssociativeGSOM(threading.Thread):
 
     def __init__(self, params, dimensions, plot_for_itr=0, activity_classes=None, output_loc=None):
         threading.Thread.__init__(self)
