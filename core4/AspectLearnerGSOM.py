@@ -75,10 +75,8 @@ class AspectLearnerGSOM(threading.Thread):
 
                     while (len(Lock.emotion_feature_list) == len(self.inputs)):
                         # print("emotion thread waiting becoz array is full ----", k, "\n")
-
                         # Notify & Wake consumer
                         Lock.emo_lock.notify()
-
                         Lock.emo_lock.wait()
 
                     # Notify & Wake consumer
@@ -93,10 +91,7 @@ class AspectLearnerGSOM(threading.Thread):
                     Lock.behavior_feature_list.insert(k, weights)
                     while (len(Lock.behavior_feature_list) == len(self.inputs)):
                         # print("behaviour thread waiting becoz array is full ----", k, "\n")
-
-                        # Notify & Wake consumer
                         Lock.behav_lock.notify()
-
                         Lock.behav_lock.wait()
 
                     Lock.behav_lock.notify()
@@ -136,6 +131,7 @@ class AspectLearnerGSOM(threading.Thread):
                     Lock.emotion_smooth_list.insert(k, smooth_weights)
                     while (len(Lock.emotion_smooth_list) == len(self.inputs)):
                         # print("emotion thread waiting becoz array is full ----", k, "\n")
+                        Lock.emo_smooth_lock.notify()
 
                         # Notify & Wake consumer
                         Lock.emo_smooth_lock.notify()
@@ -196,6 +192,8 @@ class AspectLearnerGSOM(threading.Thread):
                 if (len(Lock.emotion_assign_list) == len(self.inputs)):
                     print("emotion thread exiting becoz array is full ----", curr_count, "\n")
                     # Lock.emo_assign_lock.wait()
+                    Lock.emo_assign_lock.notify()
+                    Lock.emo_assign_lock.release()
                     return None
 
                 # Notify & Wake consumer
@@ -211,6 +209,8 @@ class AspectLearnerGSOM(threading.Thread):
                 if (len(Lock.behavior_assign_list) == len(self.inputs)):
                     print("behaviour thread exiting becoz array is full ----", curr_count, "\n")
                     # Lock.behav_assign_lock.wait()
+                    Lock.behav_assign_lock.notify()
+                    Lock.behav_assign_lock.release()
                     return None
 
                 Lock.behav_assign_lock.notify()
