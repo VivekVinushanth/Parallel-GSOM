@@ -39,14 +39,9 @@ class AssociativeGSOM(threading.Thread):
 
     def run(self):
         self.grow()
+        self.smooth()
 
     def grow(self):
-
-        global emo_lock
-        global behav_lock
-        global emotion_feature_list
-        global behavior_feature_list
-        global INPUT_SIZE
 
         self._initialize_network(self.dimensions)
         param = self.parameters
