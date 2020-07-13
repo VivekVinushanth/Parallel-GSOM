@@ -52,7 +52,7 @@ class AssociativeGSOM(threading.Thread):
         learning_rate = param.START_LEARNING_RATE
         # start_time = time.time()
         pbar = tqdm(range(0, param.LEARNING_ITERATIONS),
-                    desc='Learning ' + str(param.LEARNING_ITERATIONS) + ' iterations')
+                    desc='Consumer Learning ' + str(param.LEARNING_ITERATIONS) + ' iterations')
         for i in pbar:
 
             if i != 0:
@@ -66,9 +66,9 @@ class AssociativeGSOM(threading.Thread):
                 # Consume one item
 
                 Lock.emo_lock.acquire()
-                print("Consumer thread acquired emotion lock -----", k, "\n")
+                # print("Consumer thread acquired emotion lock -----", k, "\n")
                 while k > len(Lock.emotion_feature_list) - 1:
-                    print("Consumer thread waiting becoz k is greater (emo)----", k, "\n")
+                    # print("Consumer thread waiting becoz k is greater (emo)----", k, "\n")
                     Lock.emo_lock.wait()
                 emotion = Lock.emotion_feature_list[k]
 
@@ -79,9 +79,9 @@ class AssociativeGSOM(threading.Thread):
                 Lock.emo_lock.release()
 
                 Lock.behav_lock.acquire()
-                print("Consumer thread acquired behavior lock -----", k, "\n")
+                # print("Consumer thread acquired behavior lock -----", k, "\n")
                 while k > len(Lock.behavior_feature_list) - 1:
-                    print("Consumer thread waiting becoz k is greater (behav)----", k, "\n")
+                    # print("Consumer thread waiting becoz k is greater (behav)----", k, "\n")
                     Lock.behav_lock.wait()
                 behaviour = Lock.behavior_feature_list[k]
                 if k == Lock.INPUT_SIZE - 1:
@@ -107,7 +107,7 @@ class AssociativeGSOM(threading.Thread):
         smooth = self._smooth_for_single_iteration_and_single_input
 
         pbar = tqdm(range(0, self.parameters.SMOOTHING_ITERATIONS),
-                    desc='Smoothing ' + str(self.parameters.SMOOTHING_ITERATIONS) + ' iterations')
+                    desc='Consumer Smoothing ' + str(self.parameters.SMOOTHING_ITERATIONS) + ' iterations')
         for i in pbar:
 
             if i != 0:

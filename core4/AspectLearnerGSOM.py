@@ -54,7 +54,7 @@ class AspectLearnerGSOM(threading.Thread):
         learning_rate = param.START_LEARNING_RATE
         # start_time = time.time()
         pbar = tqdm(range(0, param.LEARNING_ITERATIONS),
-                    desc='Learning ' + str(param.LEARNING_ITERATIONS) + ' iterations')
+                    desc=self.type + ' Learning ' + str(param.LEARNING_ITERATIONS) + ' iterations')
         # for i in range(param.LEARNING_ITERATIONS):
         for i in pbar:
             if i != 0:
@@ -68,10 +68,10 @@ class AspectLearnerGSOM(threading.Thread):
                 weights = grow_in(self.inputs[k], learning_rate, neighbourhood_radius)
                 if self.type == "emotion":
                     Lock.emo_lock.acquire()
-                    print(self.type, "thread acquired emo lock----", k, "\n")
+                    # print(self.type, "thread acquired emo lock----", k, "\n")
                     Lock.emotion_feature_list.insert(k, weights)
                     while (len(Lock.emotion_feature_list) == len(self.inputs)):
-                        print("emotion thread waiting becoz array is full ----", k, "\n")
+                        # print("emotion thread waiting becoz array is full ----", k, "\n")
 
                         Lock.emo_lock.wait()
 
@@ -83,10 +83,10 @@ class AspectLearnerGSOM(threading.Thread):
 
                 elif self.type == "behaviour":
                     Lock.behav_lock.acquire()
-                    print(self.type, "thread acquired behav lock----", k, "\n")
+                    # print(self.type, "thread acquired behav lock----", k, "\n")
                     Lock.behavior_feature_list.insert(k, weights)
                     while (len(Lock.behavior_feature_list) == len(self.inputs)):
-                        print("behaviour thread waiting becoz array is full ----", k, "\n")
+                        # print("behaviour thread waiting becoz array is full ----", k, "\n")
                         Lock.behav_lock.wait()
 
                     Lock.behav_lock.notify()
@@ -106,7 +106,7 @@ class AspectLearnerGSOM(threading.Thread):
         smooth = self._smooth_for_single_iteration_and_single_input
 
         pbar = tqdm(range(0, self.parameters.SMOOTHING_ITERATIONS),
-                    desc='Smoothing ' + str(self.parameters.SMOOTHING_ITERATIONS) + ' iterations')
+                    desc=self.type+' Smoothing ' + str(self.parameters.SMOOTHING_ITERATIONS) + ' iterations')
         for i in pbar:
         # for i in range(self.parameters.SMOOTHING_ITERATIONS):
 
