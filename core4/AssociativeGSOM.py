@@ -56,7 +56,8 @@ class AssociativeGSOM(threading.Thread):
 
         learning_rate = param.START_LEARNING_RATE
         # start_time = time.time()
-        pbar = tqdm(range(0, param.LEARNING_ITERATIONS), desc='Learning ' + str(param.LEARNING_ITERATIONS) + ' iterations')
+        pbar = tqdm(range(0, param.LEARNING_ITERATIONS),
+                    desc='Learning ' + str(param.LEARNING_ITERATIONS) + ' iterations')
         for i in pbar:
 
             if i != 0:
@@ -68,44 +69,40 @@ class AssociativeGSOM(threading.Thread):
             # Consuming combined_weights
             for k in range(0, Lock.INPUT_SIZE):
                 # Consume one item
-                # cv = threading.Lock()
 
                 Lock.emo_lock.acquire()
-                print("Consumer thread acquired emotion lock -----",k,"\n")
-                while k > len(Lock.emotion_feature_list)-1:
-                    print("Consumer thread waiting becoz k is greater (emo)----", k,"\n")
+                print("Consumer thread acquired emotion lock -----", k, "\n")
+                while k > len(Lock.emotion_feature_list) - 1:
+                    print("Consumer thread waiting becoz k is greater (emo)----", k, "\n")
                     Lock.emo_lock.wait()
                 emotion = Lock.emotion_feature_list[k]
 
-                if k==Lock.INPUT_SIZE-1:
+                if k == Lock.INPUT_SIZE - 1:
                     Lock.emotion_feature_list = []
 
                 Lock.emo_lock.notify()
                 Lock.emo_lock.release()
 
                 Lock.behav_lock.acquire()
-                print("Consumer thread acquired behavior lock -----",k,"\n")
+                print("Consumer thread acquired behavior lock -----", k, "\n")
                 while k > len(Lock.behavior_feature_list) - 1:
-                    print("Consumer thread waiting becoz k is greater (behav)----", k,"\n")
+                    print("Consumer thread waiting becoz k is greater (behav)----", k, "\n")
                     Lock.behav_lock.wait()
                 behaviour = Lock.behavior_feature_list[k]
-                if k==Lock.INPUT_SIZE-1:
+                if k == Lock.INPUT_SIZE - 1:
                     Lock.behavior_feature_list = []
 
                 Lock.behav_lock.notify()
                 Lock.behav_lock.release()
 
-
-                data = np.hstack((emotion,behaviour))
+                data = np.hstack((emotion, behaviour))
                 grow_in(data, learning_rate, neighbourhood_radius)
-
 
             # Remove all the nodes above the age threshold
             Utils.Utilities.remove_older_nodes(self.gsom_nodemap, self.parameters.AGE_THRESHOLD)
 
         # END of learning iterations
         return self.gsom_nodemap
-
 
     def smooth(self):
 
@@ -114,7 +111,8 @@ class AssociativeGSOM(threading.Thread):
 
         smooth = self._smooth_for_single_iteration_and_single_input
 
-        pbar = tqdm(range(0, self.parameters.SMOOTHING_ITERATIONS), desc='Smoothing ' + str(self.parameters.SMOOTHING_ITERATIONS) + ' iterations')
+        pbar = tqdm(range(0, self.parameters.SMOOTHING_ITERATIONS),
+                    desc='Smoothing ' + str(self.parameters.SMOOTHING_ITERATIONS) + ' iterations')
         for i in pbar:
 
             if i != 0:
@@ -123,17 +121,45 @@ class AssociativeGSOM(threading.Thread):
             neighbourhood_radius = self._get_neighbourhood_radius(self.parameters.SMOOTHING_ITERATIONS, i,
                                                                   reduced_neighbourhood_radius)
 
-            for k in range(0, INPUT_SIZE):  # No need of random sampling
-                smooth(inputs[k], learning_rate, neighbourhood_radius)
+            for k in range(0, Lock.INPUT_SIZE):
+                # Consume one item
 
+                Lock.emo_smooth_lock.acquire()
+                print("Consumer thread acquired emotion smoothing lock -----", k, "\n")
+                while k > len(Lock.emotion_feature_list) - 1:
+                    print("Consumer thread waiting becoz k is greater (emo)----", k, "\n")
+                    Lock.emo_smooth_lock.wait()
+                emotion = Lock.emotion_smooth_list[k]
+
+                if k == Lock.INPUT_SIZE - 1:
+                    Lock.emotion_smooth_list = []
+
+                Lock.emo_smooth_lock.notify()
+                Lock.emo_smooth_lock.release()
+
+                Lock.behav_smooth_lock.acquire()
+                print("Consumer thread acquired behavior smoothing lock -----", k, "\n")
+                while k > len(Lock.behavior_feature_list) - 1:
+                    print("Consumer thread waiting becoz k is greater (behav)----", k, "\n")
+                    Lock.behav_smooth_lock.wait()
+                behaviour = Lock.behavior_smooth_list[k]
+                if k == Lock.INPUT_SIZE - 1:
+                    Lock.behavior_smooth_list = []
+
+                Lock.behav_smooth_lock.notify()
+                Lock.behav_smooth_lock.release()
+
+                smoothing_data = np.hstack((emotion, behaviour))
+
+                smooth(smoothing_data, learning_rate, neighbourhood_radius)
 
         # End of smoothing iterations
         return self.gsom_nodemap
 
-
     """
     This function to be called for a current dataset that used to train the gsom, to evaluate the hit nodes.
     """
+
     def assign_hits(self):
 
         param = self.parameters
@@ -147,7 +173,7 @@ class AssociativeGSOM(threading.Thread):
             # Update global context
             for z in range(1, param.NUMBER_OF_TEMPORAL_CONTEXTS):
                 self.globalContexts[z] = (param.BETA * self.previousBMU[0, z]) + (
-                            (1 - param.BETA) * self.previousBMU[0, z - 1])
+                        (1 - param.BETA) * self.previousBMU[0, z - 1])
 
             winner = Utils.Utilities.select_winner_recurrent(gsom_nodemap, self.globalContexts, self.alphas)
             winner.hit()
@@ -166,6 +192,7 @@ class AssociativeGSOM(threading.Thread):
     """
     This function to be called for a separate dataset, to evaluate the hit nodes.
     """
+
     def evaluate_hits(self):
 
         param = self.parameters
@@ -178,7 +205,8 @@ class AssociativeGSOM(threading.Thread):
 
             # Update global context
             for z in range(1, param.NUMBER_OF_TEMPORAL_CONTEXTS):
-                self.globalContexts_evaluation[z] = (param.BETA * self.previousBMU_evaluation[0, z]) + ((1 - param.BETA) * self.previousBMU_evaluation[0, z - 1])
+                self.globalContexts_evaluation[z] = (param.BETA * self.previousBMU_evaluation[0, z]) + (
+                            (1 - param.BETA) * self.previousBMU_evaluation[0, z - 1])
 
             winner = Utils.Utilities.select_winner_recurrent(gsom_nodemap, self.globalContexts_evaluation, self.alphas)
             winner.hit()
@@ -215,23 +243,21 @@ class AssociativeGSOM(threading.Thread):
                 hello = df['Number'].value_counts()
                 max_occurances = df['Number'].mode()
 
-
-
-                if(len(max_occurances)==1):
+                if (len(max_occurances) == 1):
                     f_label = max_occurances[0]
                     self.gsom_nodemap[key].change_label(f_label)
 
                 else:
                     # cripkeu=np.empty((len(value.get_mapped_labels_indexes()),55))
-                    X_weights=[]
+                    X_weights = []
                     label_indexes = value.get_mapped_labels_indexes()
                     for i in label_indexes:
-                        X_weight=inputs[i,:]
+                        X_weight = inputs[i, :]
                         # np.append(cripkeu,sdgg,axis=0)
                         X_weights.append(X_weight)
                     X_weights = np.asarray(X_weights)
-                    neutral_node=value.recurrent_weights.reshape(1,value.dimensions)
-                    out = scipy.spatial.distance.cdist(X_weights,neutral_node , 'euclidean')
+                    neutral_node = value.recurrent_weights.reshape(1, value.dimensions)
+                    out = scipy.spatial.distance.cdist(X_weights, neutral_node, 'euclidean')
 
                     nearest_index = out.argmin()
                     nearest_neighbor_index = label_indexes[nearest_index]
@@ -251,7 +277,7 @@ class AssociativeGSOM(threading.Thread):
         })
         return results
 
-    def predict(self,X_test):
+    def predict(self, X_test):
         y_pred = []
         param = self.parameters
         gsom_nodemap = copy.deepcopy(self.gsom_nodemap)
@@ -262,13 +288,12 @@ class AssociativeGSOM(threading.Thread):
             # Update global context
             for z in range(1, param.NUMBER_OF_TEMPORAL_CONTEXTS):
                 self.globalContexts_evaluation[z] = (param.BETA * self.previousBMU_evaluation[0, z]) + (
-                            (1 - param.BETA) * self.previousBMU_evaluation[0, z - 1])
+                        (1 - param.BETA) * self.previousBMU_evaluation[0, z - 1])
 
             winner = Utils.Utilities.select_winner_recurrent(gsom_nodemap, self.globalContexts_evaluation, self.alphas)
             node_index = Utils.Utilities.generate_index(winner.x, winner.y)
             y_pred.append(winner.get_mapped_labels())
         return y_pred
-
 
     def _smooth_for_single_iteration_and_single_input(self, input_vector, learning_rate, neigh_radius):
 
@@ -278,7 +303,8 @@ class AssociativeGSOM(threading.Thread):
 
         # Update global context
         for z in range(1, param.NUMBER_OF_TEMPORAL_CONTEXTS):
-            self.globalContexts[z] = (param.BETA * self.previousBMU[0, z]) + ((1 - param.BETA) * self.previousBMU[0, z - 1])
+            self.globalContexts[z] = (param.BETA * self.previousBMU[0, z]) + (
+                        (1 - param.BETA) * self.previousBMU[0, z - 1])
 
         winner = Utils.Utilities.select_winner_recurrent(gsom_nodemap, self.globalContexts, self.alphas)
 
@@ -305,6 +331,7 @@ class AssociativeGSOM(threading.Thread):
         elif bottom in gsom_nodemap:
             self._adjust_weights_for_neighbours(gsom_nodemap[bottom], winner, neigh_radius, learning_rate)
         # dhtfjhfgjgf
+
     def _grow_for_single_iteration_and_single_input(self, input_vector, learning_rate, neigh_radius):
 
         # Set local references to self variables
@@ -314,7 +341,8 @@ class AssociativeGSOM(threading.Thread):
 
         # Update global context
         for z in range(1, param.NUMBER_OF_TEMPORAL_CONTEXTS):
-            self.globalContexts[z] = (param.BETA * self.previousBMU[0, z]) + ((1 - param.BETA) * self.previousBMU[0, z - 1])
+            self.globalContexts[z] = (param.BETA * self.previousBMU[0, z]) + (
+                        (1 - param.BETA) * self.previousBMU[0, z - 1])
 
         # Select the winner
         winner = Utils.Utilities.select_winner_recurrent(gsom_nodemap, self.globalContexts, self.alphas)
@@ -380,7 +408,6 @@ class AssociativeGSOM(threading.Thread):
         neigh_radius_sqr = neigh_radius * neigh_radius
 
         if node_dist_sqr < neigh_radius_sqr:
-
             # update the weight vector of the neighbour
             influence = math.exp(- node_dist_sqr / (2 * neigh_radius_sqr))
             node.adjust_weights(self.globalContexts, influence, learning_rate)
@@ -392,10 +419,14 @@ class AssociativeGSOM(threading.Thread):
 
         # Generate the node map for initial GSOM layer - for all the inputs
         self.gsom_nodemap = {
-            '0:0': Elements.GSOMNode(0, 0, np.random.rand(dimensions), np.zeros((self.parameters.NUMBER_OF_TEMPORAL_CONTEXTS-1, self.dimensions))),
-            '0:1': Elements.GSOMNode(0, 1, np.random.rand(dimensions), np.zeros((self.parameters.NUMBER_OF_TEMPORAL_CONTEXTS-1, self.dimensions))),
-            '1:0': Elements.GSOMNode(1, 0, np.random.rand(dimensions), np.zeros((self.parameters.NUMBER_OF_TEMPORAL_CONTEXTS-1, self.dimensions))),
-            '1:1': Elements.GSOMNode(1, 1, np.random.rand(dimensions), np.zeros((self.parameters.NUMBER_OF_TEMPORAL_CONTEXTS-1, self.dimensions))),
+            '0:0': Elements.GSOMNode(0, 0, np.random.rand(dimensions),
+                                     np.zeros((self.parameters.NUMBER_OF_TEMPORAL_CONTEXTS - 1, self.dimensions))),
+            '0:1': Elements.GSOMNode(0, 1, np.random.rand(dimensions),
+                                     np.zeros((self.parameters.NUMBER_OF_TEMPORAL_CONTEXTS - 1, self.dimensions))),
+            '1:0': Elements.GSOMNode(1, 0, np.random.rand(dimensions),
+                                     np.zeros((self.parameters.NUMBER_OF_TEMPORAL_CONTEXTS - 1, self.dimensions))),
+            '1:1': Elements.GSOMNode(1, 1, np.random.rand(dimensions),
+                                     np.zeros((self.parameters.NUMBER_OF_TEMPORAL_CONTEXTS - 1, self.dimensions))),
         }
 
     def _get_learning_rate(self, parameters, prev_learning_rate, nodemap_size):
