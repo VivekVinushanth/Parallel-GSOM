@@ -15,7 +15,7 @@ behavior_feature_list = []
 emotion_smooth_list = []
 behavior_smooth_list = []
 
-INPUT_SIZE = 5
+INPUT_SIZE = 50
 
 emotion_feature = np.random.rand(INPUT_SIZE,10)
 behaviour_feature = np.random.rand(INPUT_SIZE,10)
