@@ -15,7 +15,7 @@ import Lock
 np.random.seed(8)
 
 
-class ProducerGSOM(threading.Thread):
+class AspectLearnerGSOM(threading.Thread):
 
     def __init__(self,  params, type ,input_vector, dimensions, plot_for_itr=0, activity_classes=None, output_loc=None):
         threading.Thread.__init__(self)

@@ -1,5 +1,5 @@
 import time
-from core4 import ProducerGSOM as GSOM_Core
+from core4 import AspectLearnerGSOM as GSOM_Core
 
 
 class Controller:
