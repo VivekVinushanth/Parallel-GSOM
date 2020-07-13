@@ -106,9 +106,9 @@ class AspectLearnerGSOM(threading.Thread):
         smooth = self._smooth_for_single_iteration_and_single_input
 
         pbar = tqdm(range(0, self.parameters.SMOOTHING_ITERATIONS),
-                    desc=self.type+' Smoothing ' + str(self.parameters.SMOOTHING_ITERATIONS) + ' iterations')
+                    desc=self.type + ' Smoothing ' + str(self.parameters.SMOOTHING_ITERATIONS) + ' iterations')
         for i in pbar:
-        # for i in range(self.parameters.SMOOTHING_ITERATIONS):
+            # for i in range(self.parameters.SMOOTHING_ITERATIONS):
 
             if i != 0:
                 learning_rate = self._get_learning_rate(self.parameters, learning_rate, len(self.gsom_nodemap))
@@ -119,7 +119,7 @@ class AspectLearnerGSOM(threading.Thread):
             for k in range(0, len(self.inputs)):  # No need of random sampling
                 # Produce one item
 
-                smooth_weights =  smooth(self.inputs[k], learning_rate, neighbourhood_radius)
+                smooth_weights = smooth(self.inputs[k], learning_rate, neighbourhood_radius)
                 if self.type == "emotion":
                     Lock.emo_smooth_lock.acquire()
                     # print(self.type, "thread acquired emo smooth lock----", k, "\n")
@@ -145,7 +145,6 @@ class AspectLearnerGSOM(threading.Thread):
 
                     Lock.behav_smooth_lock.notify()
                     Lock.behav_smooth_lock.release()
-
 
         # End of smoothing iterations
         return self.gsom_nodemap
@@ -175,6 +174,31 @@ class AspectLearnerGSOM(threading.Thread):
             # Recurrent learning set previous BMU
             self.previousBMU[0] = winner.recurrent_weights
 
+            if self.type == "emotion":
+                Lock.emo_assign_lock.acquire()
+                # print(self.type, "thread acquired emo smooth lock----", k, "\n")
+                Lock.emotion_assign_list.insert(curr_count, self.previousBMU[0])
+                while (len(Lock.emotion_assign_list) == len(self.inputs)):
+                    # print("emotion thread waiting becoz array is full ----", k, "\n")
+                    Lock.emo_assign_lock.wait()
+
+                # Notify & Wake consumer
+                Lock.emo_assign_lock.notify()
+
+                # Release acquired lock by producer
+                Lock.emo_assign_lock.release()
+
+            elif self.type == "behaviour":
+                Lock.behav_assign_lock.acquire()
+                # print(self.type, "thread acquired behav lock----", k, "\n")
+                Lock.behavior_assign_list.insert(curr_count, self.previousBMU[0])
+                while (len(Lock.behavior_assign_list) == len(self.inputs)):
+                    # print("behaviour thread waiting becoz array is full ----", k, "\n")
+                    Lock.behav_assign_lock.wait()
+
+                Lock.behav_assign_lock.notify()
+                Lock.behav_assign_lock.release()
+
             node_index = Utils.Utilities.generate_index(winner.x, winner.y)
             self.gsom_nodemap[node_index].map_label_indexes(curr_count)
             self.gsom_nodemap[node_index].map_label(self.activity_classes[curr_count])
@@ -200,7 +224,7 @@ class AspectLearnerGSOM(threading.Thread):
             # Update global context
             for z in range(1, param.NUMBER_OF_TEMPORAL_CONTEXTS):
                 self.globalContexts_evaluation[z] = (param.BETA * self.previousBMU_evaluation[0, z]) + (
-                            (1 - param.BETA) * self.previousBMU_evaluation[0, z - 1])
+                        (1 - param.BETA) * self.previousBMU_evaluation[0, z - 1])
 
             winner = Utils.Utilities.select_winner_recurrent(gsom_nodemap, self.globalContexts_evaluation, self.alphas)
             winner.hit()
@@ -298,7 +322,7 @@ class AspectLearnerGSOM(threading.Thread):
         # Update global context
         for z in range(1, param.NUMBER_OF_TEMPORAL_CONTEXTS):
             self.globalContexts[z] = (param.BETA * self.previousBMU[0, z]) + (
-                        (1 - param.BETA) * self.previousBMU[0, z - 1])
+                    (1 - param.BETA) * self.previousBMU[0, z - 1])
 
         winner = Utils.Utilities.select_winner_recurrent(gsom_nodemap, self.globalContexts, self.alphas)
 
@@ -337,7 +361,7 @@ class AspectLearnerGSOM(threading.Thread):
         # Update global context
         for z in range(1, param.NUMBER_OF_TEMPORAL_CONTEXTS):
             self.globalContexts[z] = (param.BETA * self.previousBMU[0, z]) + (
-                        (1 - param.BETA) * self.previousBMU[0, z - 1])
+                    (1 - param.BETA) * self.previousBMU[0, z - 1])
 
         # Select the winner
         winner = Utils.Utilities.select_winner_recurrent(gsom_nodemap, self.globalContexts, self.alphas)
