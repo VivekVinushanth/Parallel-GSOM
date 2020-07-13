@@ -12,7 +12,7 @@ sys.path.append('../../')
 import copy
 from util import utilities as Utils
 from util import display as Display_Utils
-from core4 import ProducerGSOM as GSOM_Core
+from core4 import AspectLearnerGSOM as GSOM_Core
 from params import params as Params
 
 from gsomClassifier import GSOMClassifier
