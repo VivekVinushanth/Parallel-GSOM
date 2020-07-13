@@ -9,9 +9,9 @@ Parameters
 * *aspect* (miniumum =2) = number of aspects to be learneed (No. of base layer GSOMs)
 * *hierarchy* (minimum =1, Default *ceil(aspect/2)*)= number of hierarchies created for associative GSOM to learn aspects in combination.
 
-Samle
+Samle algorithm flow (aspect=2,hierarchy=1)
 ---
 * aspect =2
-* hierarchy (default) =2
+* hierarchy (default) =1
 
-![sample_algorithm](Parallel-GSOM/Diagrams/MAL-GSOM.png)
+![sample_algorithm](https://github.com/VivekVinushanth/Parallel-GSOM/blob/master/Diagrams/MAL-GSOM.png)
