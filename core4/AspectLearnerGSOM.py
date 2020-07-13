@@ -42,6 +42,8 @@ class AspectLearnerGSOM(threading.Thread):
     def run(self):
         self.grow()
         self.smooth()
+        self.assign_hits()
+
 
     def grow(self):
 
@@ -72,7 +74,8 @@ class AspectLearnerGSOM(threading.Thread):
                     Lock.emotion_feature_list.insert(k, weights)
                     while (len(Lock.emotion_feature_list) == len(self.inputs)):
                         # print("emotion thread waiting becoz array is full ----", k, "\n")
-
+                        # Notify & Wake consumer
+                        Lock.emo_lock.notify()
                         Lock.emo_lock.wait()
 
                     # Notify & Wake consumer
@@ -87,6 +90,7 @@ class AspectLearnerGSOM(threading.Thread):
                     Lock.behavior_feature_list.insert(k, weights)
                     while (len(Lock.behavior_feature_list) == len(self.inputs)):
                         # print("behaviour thread waiting becoz array is full ----", k, "\n")
+                        Lock.behav_lock.notify()
                         Lock.behav_lock.wait()
 
                     Lock.behav_lock.notify()
@@ -126,6 +130,7 @@ class AspectLearnerGSOM(threading.Thread):
                     Lock.emotion_smooth_list.insert(k, smooth_weights)
                     while (len(Lock.emotion_smooth_list) == len(self.inputs)):
                         # print("emotion thread waiting becoz array is full ----", k, "\n")
+                        Lock.emo_smooth_lock.notify()
 
                         Lock.emo_smooth_lock.wait()
 
@@ -141,6 +146,8 @@ class AspectLearnerGSOM(threading.Thread):
                     Lock.behavior_smooth_list.insert(k, smooth_weights)
                     while (len(Lock.behavior_smooth_list) == len(self.inputs)):
                         # print("behaviour thread waiting becoz array is full ----", k, "\n")
+                        Lock.behav_smooth_lock.notify()
+
                         Lock.behav_smooth_lock.wait()
 
                     Lock.behav_smooth_lock.notify()
@@ -176,11 +183,12 @@ class AspectLearnerGSOM(threading.Thread):
 
             if self.type == "emotion":
                 Lock.emo_assign_lock.acquire()
-                # print(self.type, "thread acquired emo smooth lock----", k, "\n")
+                print(self.type, "thread acquired emo assign lock----", curr_count, "\n")
                 Lock.emotion_assign_list.insert(curr_count, self.previousBMU[0])
-                while (len(Lock.emotion_assign_list) == len(self.inputs)):
-                    # print("emotion thread waiting becoz array is full ----", k, "\n")
-                    Lock.emo_assign_lock.wait()
+                if (len(Lock.emotion_assign_list) == len(self.inputs)):
+                    print("emotion thread exiting becoz array is full ----", curr_count, "\n")
+                    # Lock.emo_assign_lock.wait()
+                    return None
 
                 # Notify & Wake consumer
                 Lock.emo_assign_lock.notify()
@@ -190,11 +198,12 @@ class AspectLearnerGSOM(threading.Thread):
 
             elif self.type == "behaviour":
                 Lock.behav_assign_lock.acquire()
-                # print(self.type, "thread acquired behav lock----", k, "\n")
+                print(self.type, "thread acquired behav assign lock----", curr_count, "\n")
                 Lock.behavior_assign_list.insert(curr_count, self.previousBMU[0])
-                while (len(Lock.behavior_assign_list) == len(self.inputs)):
-                    # print("behaviour thread waiting becoz array is full ----", k, "\n")
-                    Lock.behav_assign_lock.wait()
+                if (len(Lock.behavior_assign_list) == len(self.inputs)):
+                    print("behaviour thread exiting becoz array is full ----", curr_count, "\n")
+                    # Lock.behav_assign_lock.wait()
+                    return None
 
                 Lock.behav_assign_lock.notify()
                 Lock.behav_assign_lock.release()
@@ -205,7 +214,7 @@ class AspectLearnerGSOM(threading.Thread):
             curr_count += 1
 
         # return the finalized map
-        return self.gsom_nodemap
+        # return self.gsom_nodemap
 
     """
     This function to be called for a separate dataset, to evaluate the hit nodes.
