@@ -39,6 +39,14 @@ class AssociativeGSOM(threading.Thread):
 
     def run(self):
         self.grow()
+        Lock.emo_lock.acquire()
+        Lock.emo_lock.notify()
+        Lock.emo_lock.release()
+
+        Lock.behav_lock.acquire()
+        Lock.behav_lock.notify()
+        Lock.behav_lock.release()
+
         self.smooth()
 
     def grow(self):

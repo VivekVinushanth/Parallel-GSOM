@@ -122,10 +122,10 @@ class AspectLearnerGSOM(threading.Thread):
                 smooth_weights =  smooth(self.inputs[k], learning_rate, neighbourhood_radius)
                 if self.type == "emotion":
                     Lock.emo_smooth_lock.acquire()
-                    # print(self.type, "thread acquired emo smooth lock----", k, "\n")
+                    print(self.type, "thread acquired emo smooth lock----", k, "\n")
                     Lock.emotion_smooth_list.insert(k, smooth_weights)
                     while (len(Lock.emotion_smooth_list) == len(self.inputs)):
-                        # print("emotion thread waiting becoz array is full ----", k, "\n")
+                        print("emotion thread waiting becoz array is full ----", k, "\n")
 
                         Lock.emo_smooth_lock.wait()
 
@@ -137,10 +137,10 @@ class AspectLearnerGSOM(threading.Thread):
 
                 elif self.type == "behaviour":
                     Lock.behav_smooth_lock.acquire()
-                    # print(self.type, "thread acquired behav lock----", k, "\n")
+                    print(self.type, "thread acquired behav lock----", k, "\n")
                     Lock.behavior_smooth_list.insert(k, smooth_weights)
                     while (len(Lock.behavior_smooth_list) == len(self.inputs)):
-                        # print("behaviour thread waiting becoz array is full ----", k, "\n")
+                        print("behaviour thread waiting becoz array is full ----", k, "\n")
                         Lock.behav_smooth_lock.wait()
 
                     Lock.behav_smooth_lock.notify()
