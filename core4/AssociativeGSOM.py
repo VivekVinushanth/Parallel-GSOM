@@ -49,6 +49,16 @@ class AssociativeGSOM(threading.Thread):
 
         self.smooth()
 
+        Lock.emo_smooth_lock.acquire()
+        Lock.emo_smooth_lock.notify()
+        Lock.emo_smooth_lock.release()
+
+        Lock.behav_smooth_lock.acquire()
+        Lock.behav_smooth_lock.notify()
+        Lock.behav_smooth_lock.release()
+
+        self.assign_hits()
+
     def grow(self):
 
         self._initialize_network(self.dimensions)
@@ -76,7 +86,9 @@ class AssociativeGSOM(threading.Thread):
                 Lock.emo_lock.acquire()
                 print("Consumer thread acquired emotion lock -----", k, "\n")
                 while k > len(Lock.emotion_feature_list) - 1:
-                    print("Consumer thread waiting becoz k is greater (emo)----", k, "\n")
+                    # print("Consumer thread waiting becoz k is greater (emo)----", k, "\n")
+                    Lock.emo_lock.notify()
+
                     Lock.emo_lock.wait()
                 emotion = Lock.emotion_feature_list[k]
 
@@ -89,7 +101,9 @@ class AssociativeGSOM(threading.Thread):
                 Lock.behav_lock.acquire()
                 print("Consumer thread acquired behavior lock -----", k, "\n")
                 while k > len(Lock.behavior_feature_list) - 1:
-                    print("Consumer thread waiting becoz k is greater (behav)----", k, "\n")
+                    # print("Consumer thread waiting becoz k is greater (behav)----", k, "\n")
+                    Lock.behav_lock.notify()
+
                     Lock.behav_lock.wait()
                 behaviour = Lock.behavior_feature_list[k]
                 if k == Lock.INPUT_SIZE - 1:
@@ -130,7 +144,9 @@ class AssociativeGSOM(threading.Thread):
                 Lock.emo_smooth_lock.acquire()
                 print("Consumer thread acquired emotion smoothing lock -----", k, "\n")
                 while k > len(Lock.emotion_smooth_list) - 1:
-                    print("Consumer thread waiting becoz k is greater (emo)----", k, "\n")
+                    # print("Consumer thread waiting becoz k is greater (emo)----", k, "\n")
+                    Lock.emo_smooth_lock.notify()
+
                     Lock.emo_smooth_lock.wait()
                 emotion = Lock.emotion_smooth_list[k]
 
@@ -144,6 +160,8 @@ class AssociativeGSOM(threading.Thread):
                 # print("Consumer thread acquired behavior smoothing lock -----", k, "\n")
                 while k > len(Lock.behavior_smooth_list) - 1:
                     # print("Consumer thread waiting becoz k is greater (behav)----", k, "\n")
+                    Lock.behav_smooth_lock.notify()
+
                     Lock.behav_smooth_lock.wait()
                 behaviour = Lock.behavior_smooth_list[k]
                 if k == Lock.INPUT_SIZE - 1:
@@ -157,7 +175,7 @@ class AssociativeGSOM(threading.Thread):
                 smooth(smoothing_data, learning_rate, neighbourhood_radius)
 
         # End of smoothing iterations
-        return self.gsom_nodemap
+        # return self.gsom_nodemap
 
     """
     This function to be called for a current dataset that used to train the gsom, to evaluate the hit nodes.
@@ -169,9 +187,42 @@ class AssociativeGSOM(threading.Thread):
         gsom_nodemap = self.gsom_nodemap
         curr_count = 0
 
-        for cur_input in inputs:
+        for k in range(0, Lock.INPUT_SIZE):
+            # Consume one item
 
-            self.globalContexts[0] = cur_input
+            Lock.emo_assign_lock.acquire()
+            print("Consumer thread acquired emotion assign lock -----", k, "\n")
+            while k > len(Lock.emotion_assign_list) - 1:
+                print("Consumer thread waiting becoz k is greater (emo)----", k, "\n")
+                Lock.emo_assign_lock.notify()
+
+                Lock.emo_assign_lock.wait()
+            emotion = Lock.emotion_assign_list[k]
+
+            # if k == Lock.INPUT_SIZE - 1:
+            #     Lock.emotion_assign_list = []
+
+            Lock.emo_assign_lock.notify()
+            Lock.emo_assign_lock.release()
+
+            Lock.behav_assign_lock.acquire()
+            print("Consumer thread acquired behavior assign lock -----", k, "\n")
+            while k > len(Lock.behavior_assign_list) - 1:
+                print("Consumer thread waiting becoz k is greater (behav)----", k, "\n")
+                Lock.behav_assign_lock.notify()
+
+                Lock.behav_assign_lock.wait()
+            behaviour = Lock.behavior_assign_list[k]
+            # if k == Lock.INPUT_SIZE - 1:
+            #     Lock.behavior_assign_list = []
+
+            Lock.behav_assign_lock.notify()
+            Lock.behav_assign_lock.release()
+
+            assign_data = np.hstack((emotion, behaviour))
+
+
+            self.globalContexts[0] = assign_data
 
             # Update global context
             for z in range(1, param.NUMBER_OF_TEMPORAL_CONTEXTS):
@@ -190,7 +241,7 @@ class AssociativeGSOM(threading.Thread):
             curr_count += 1
 
         # return the finalized map
-        return self.gsom_nodemap
+        # return self.gsom_nodemap
 
     """
     This function to be called for a separate dataset, to evaluate the hit nodes.
